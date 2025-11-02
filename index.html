@@ -1,0 +1,774 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI RaceKit</title>
+    
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
+    
+    <link rel="stylesheet" href="main.css">
+
+    <script type="module" src="main.js" defer></script>
+</head>
+<body>
+
+    <div id="view-home">
+        <div class="hero-overlay" aria-hidden="false">
+            <h1 class="hero-title">AI RaceKit</h1>
+        </div>
+
+        <div id="home-container">
+            <div class="form-actions" style="text-align: center;">
+                <button id="analyzeButtonHome" style="padding: 1rem 2.5rem; font-size: 1.125rem;">
+                    Analyze Race Data
+                </button>
+            </div>
+
+            <div id="errorMessage" class="hidden" role="alert">
+            </div>
+            
+            <div id="loadingSpinner" class="hidden">
+                <div class="emoji-spinner">⏳</div> 
+                <p>Analyzing data...</p>
+            </div>
+        </div>
+    </div>
+
+    <div id="fileUploadModal" class="modal-overlay hidden">
+        <div class="modal-content" style="max-width: 32rem;"> <div class="modal-header">
+                <h2>Upload Race Data</h2>
+                <button id="cancelFileUploadButton" class="modal-close-btn">&times;</button>
+            </div>
+            
+            <div id="fileUploadFormContainer" style="padding: 1.5rem; overflow-y: auto;">
+                <p class="help-text">
+                    Please provide the official results CSV and the detailed lap/sector data CSV for Raceday 1.
+                </p>
+                <div id="fileUploadErrorMessage" class="hidden" role="alert"></div>
+
+                <div class="form-group" style="display: flex; flex-direction: column; gap: 1.5rem;">
+                    <div>
+                        <label for="resultsFile">
+                            📄 Official Results
+                            <span><code>RESULTS or RESULTS BY CLASS</code></span>
+                        </label>
+                        <input type="file" id="resultsFile" accept=".csv">
+                    </div>
+                    
+                    <div>
+                        <label for="lapDataFile">
+                            📄 Lap & Sector Data
+                            <span><code>ANALYSIS WITH SECTIONS</code></span>
+                        </label>
+                        <input type="file" id="lapDataFile" accept=".csv">
+                    </div>
+                </div>
+
+                <div class="checkbox-group" style="margin-top: 1.5rem; border-top: 1px solid var(--color-border-light); padding-top: 1.5rem;">
+                    <input id="addRaceday2Checkbox" name="addRaceday2" type="checkbox">
+                    <label for="addRaceday2Checkbox" style="font-weight: 700; color: var(--color-text-primary);">
+                        Add Raceday 2 data for comparison?
+                    </label>
+                </div>
+
+                <div id="raceday2Uploads" class="hidden" style="display: flex; flex-direction: column; gap: 1.5rem; margin-top: 1.5rem;">
+                     <p class="help-text">
+                        Provide the corresponding files for Raceday 2.
+                    </p>
+                    <div>
+                        <label for="resultsFileRd2">
+                            📄 Official Results
+                            <span><code>RESULTS or RESULTS BY CLASS</code></span>
+                        </label>
+                        <input type="file" id="resultsFileRd2" accept=".csv">
+                    </div>
+                    
+                    <div>
+                        <label for="lapDataFileRd2">
+                            📄 Lap & Sector Data
+                            <span><code>ANALYSIS WITH SECTIONS</code></span>
+                        </label>
+                        <input type="file" id="lapDataFileRd2" accept=".csv">
+                    </div>
+                </div>
+
+            </div>
+
+            <div class="modal-footer">
+                <button id="nextButtonFileUpload" class="modal-confirm-btn">
+                    Next &rarr;
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <div id="headerMappingModal" class="modal-overlay hidden">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Map Data Fields</h2>
+                <button id="cancelMappingButton" class="modal-close-btn">&times;</button>
+            </div>
+            
+            <div id="mappingLoadingSpinner" class="hidden">
+                <div class="emoji-spinner">⏳</div> 
+                <p>Reading file headers...</p>
+            </div>
+
+            <div id="mappingFormContainer">
+                <p class="help-text">
+                    Select the header from your CSV files that matches each required data field.
+                </p>
+                <div id="mappingErrorMessage" class="hidden" role="alert"></div>
+
+                <div class="mapping-grid">
+                    <section>
+                        <h3>📄 Raceday 1 - Official Results</h3>
+                        <div class="form-field">
+                            <label for="map-results-pos">Finishing Position</label>
+                            <select id="map-results-pos" class="mapping-select" data-file="results" data-day="rd1"></select>
+                        </div>
+                        <div class="form-field">
+                            <label for="map-results-number">Driver Number</label>
+                            <select id="map-results-number" class="mapping-select" data-file="results" data-day="rd1"></select>
+                        </div>
+                        <div class="form-field">
+                            <label for="map-results-elapsed">Total Elapsed Time</label>
+                            <select id="map-results-elapsed" class="mapping-select" data-file="results" data-day="rd1"></select>
+                        </div>
+                        <div class="form-field">
+                            <label for="map-results-laps">Total Laps</label>
+                            <select id="map-results-laps" class="mapping-select" data-file="results" data-day="rd1"></select>
+                        </div>
+                        <div class="form-field">
+                            <label for="map-results-best-lap-time">Best Lap Time</label>
+                            <select id="map-results-best-lap-time" class="mapping-select" data-file="results" data-day="rd1"></select>
+                        </div>
+                        <div class="form-field">
+                            <label for="map-results-best-lap-kph">Best Lap Speed</label>
+                            <select id="map-results-best-lap-kph" class="mapping-select" data-file="results" data-day="rd1"></select>
+                        </div>
+                    </section>
+                    
+                    <section>
+                        <h3>📄 Raceday 1 - Lap & Sector Data</h3>
+                        <div class="form-field">
+                            <label for="map-lap-number">Driver Number</label>
+                            <select id="map-lap-number" class="mapping-select" data-file="lap" data-day="rd1"></select>
+                        </div>
+                        <div class="form-field">
+                            <label for="map-lap-flag">Lap Flag (e.g., GF)</label>
+                            <select id="map-lap-flag" class="mapping-select" data-file="lap" data-day="rd1"></select>
+                        </div>
+                        <div class="form-field">
+                            <label for="map-lap-s1">Sector 1 Time (s)</label>
+                            <select id="map-lap-s1" class="mapping-select" data-file="lap" data-day="rd1"></select>
+                        </div>
+                        <div class="form-field">
+                            <label for="map-lap-s2">Sector 2 Time (s)</label>
+                            <select id="map-lap-s2" class="mapping-select" data-file="lap" data-day="rd1"></select>
+                        </div>
+                        <div class="form-field">
+                            <label for="map-lap-s3">Sector 3 Time (s)</label>
+                            <select id="map-lap-s3" class="mapping-select" data-file="lap" data-day="rd1"></select>
+                        </div>
+                        <div class="form-field">
+                            <label for="map-lap-pit-time">Pit Time (s)</label>
+                            <select id="map-lap-pit-time" class="mapping-select" data-file="lap" data-day="rd1"></select>
+                        </div>
+                         <div class="form-field">
+                            <label for="map-lap-number-lap">Lap Number</label>
+                            <select id="map-lap-number-lap" class="mapping-select" data-file="lap" data-day="rd1"></select>
+                        </div>
+                        <div class="form-field">
+                            <label for="map-lap-time">Total Lap Time</label>
+                            <select id="map-lap-time" class="mapping-select" data-file="lap" data-day="rd1"></select>
+                        </div>
+                    </section>
+
+                     <section id="mapping-grid-RD2" class="hidden">
+                        <h3 id="mapping-section-title-RD2" class="hidden">📄 Raceday 2 - Official Results</h3>
+                        <div class="form-field">
+                            <label for="map-results-pos-RD2">Finishing Position</label>
+                            <select id="map-results-pos-RD2" class="mapping-select" data-file="results" data-day="rd2"></select>
+                        </div>
+                        <div class="form-field">
+                            <label for="map-results-number-RD2">Driver Number</label>
+                            <select id="map-results-number-RD2" class="mapping-select" data-file="results" data-day="rd2"></select>
+                        </div>
+                        <div class="form-field">
+                            <label for="map-results-elapsed-RD2">Total Elapsed Time</label>
+                            <select id="map-results-elapsed-RD2" class="mapping-select" data-file="results" data-day="rd2"></select>
+                        </div>
+                        <div class="form-field">
+                            <label for="map-results-laps-RD2">Total Laps</label>
+                            <select id="map-results-laps-RD2" class="mapping-select" data-file="results" data-day="rd2"></select>
+                        </div>
+                        <div class="form-field">
+                            <label for="map-results-best-lap-time-RD2">Best Lap Time</label>
+                            <select id="map-results-best-lap-time-RD2" class="mapping-select" data-file="results" data-day="rd2"></select>
+                        </div>
+                        <div class="form-field">
+                            <label for="map-results-best-lap-kph-RD2">Best Lap Speed</label>
+                            <select id="map-results-best-lap-kph-RD2" class="mapping-select" data-file="results" data-day="rd2"></select>
+                        </div>
+                    </section>
+                    
+                    <section id="mapping-grid-lap-RD2" class="rd2-mapping-section hidden">
+                        <h3>📄 Raceday 2 - Lap & Sector Data</h3>
+                        <div class="form-field">
+                            <label for="map-lap-number-RD2">Driver Number</label>
+                            <select id="map-lap-number-RD2" class="mapping-select" data-file="lap" data-day="rd2"></select>
+                        </div>
+                        <div class="form-field">
+                            <label for="map-lap-flag-RD2">Lap Flag (e.g., GF)</label>
+                            <select id="map-lap-flag-RD2" class="mapping-select" data-file="lap" data-day="rd2"></select>
+                        </div>
+                        <div class="form-field">
+                            <label for="map-lap-s1-RD2">Sector 1 Time (s)</label>
+                            <select id="map-lap-s1-RD2" class="mapping-select" data-file="lap" data-day="rd2"></select>
+                        </div>
+                        <div class="form-field">
+                            <label for="map-lap-s2-RD2">Sector 2 Time (s)</label>
+                            <select id="map-lap-s2-RD2" class="mapping-select" data-file="lap" data-day="rd2"></select>
+                        </div>
+                        <div class="form-field">
+                            <label for="map-lap-s3-RD2">Sector 3 Time (s)</label>
+                            <select id="map-lap-s3-RD2" class="mapping-select" data-file="lap" data-day="rd2"></select>
+                        </div>
+                        <div class="form-field">
+                            <label for="map-lap-pit-time-RD2">Pit Time (s)</label>
+                            <select id="map-lap-pit-time-RD2" class="mapping-select" data-file="lap" data-day="rd2"></select>
+                        </div>
+                         <div class="form-field">
+                            <label for="map-lap-number-lap-RD2">Lap Number</label>
+                            <select id="map-lap-number-lap-RD2" class="mapping-select" data-file="lap" data-day="rd2"></select>
+                        </div>
+                        <div class="form-field">
+                            <label for="map-lap-time-RD2">Total Lap Time</label>
+                            <select id="map-lap-time-RD2" class="mapping-select" data-file="lap" data-day="rd2"></select>
+                        </div>
+                    </section>
+                </div>
+            </div>
+
+            <div class="modal-footer">
+                <button id="confirmMappingButton" class="modal-confirm-btn">
+                    Confirm & Analyze
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <div id="view-dashboard" class="hidden">
+        
+        <header id="main-header">
+            <nav id="main-nav">
+                <span class="logo-text">AI RaceKit</span>
+
+                <div id="nav-links-container">
+                    <button class="nav-link active" data-target="view-evaluation">🔍 Evaluation</button>
+                    <button class="nav-link" data-target="view-ai">📊 AI Analysis</button>    
+                    <button class="nav-link" data-target="view-simulator">🏎️ Simulator</button>
+                    <button class="nav-link" data-target="view-chat">💬 Chat</button>
+                </div>
+                
+                <div id="exit-button-container">
+                    <button id="exitButton">
+                        Exit
+                    </button>
+                </div>
+            </nav>
+        </header>
+
+        <main>
+
+            <div id="analysisSettings">
+                <div id="settings-grid">
+                    
+                    <div id="raceday-filter-container" class="hidden">
+                         <label>
+                            Raceday Data Source
+                        </label>
+                        <div id="racedayFilterGroup" class="form-field" style="display: flex; gap: 1rem;">
+                             <div class="radio-group">
+                                <input type="radio" id="rd-filter-rd1" name="raceday-filter-evaluation" value="rd1" checked>
+                                <label for="rd-filter-rd1">Raceday 1</label>
+                            </div>
+                             <div class="radio-group">
+                                <input type="radio" id="rd-filter-rd2" name="raceday-filter-evaluation" value="rd2">
+                                <label for="rd-filter-rd2">Raceday 2</label>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div id="flag-settings">
+                        <label>
+                            Lap Flags to Include in Analysis
+                        </label>
+                        <div id="flagCheckboxes">
+                            </div>
+                        <div class="checkbox-group">
+                            <input id="excludePitLaps" name="excludePitLaps" type="checkbox">
+                            <label for="excludePitLaps">
+                                Exclude pit stop laps
+                            </label>
+                        </div>
+                    </div>
+                    <div id="filter-controls" class="hidden">
+                        <button id="updateAnalysisButton">
+                            Update
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <div id="view-evaluation">
+                <div id="chartsContainer" class="card">
+                    <h2>🔍 Driver Sector Evaluation</h2>
+                    <p id="summaryText"></p>
+                    <p id="chartSubtitle">(Green is faster, Red is slower)</p>
+                    <div class="chart-grid">
+                        <div id="chartContainerS1">
+                            <canvas id="chartS1"></canvas>
+                        </div>
+                        <div id="chartContainerS2">
+                            <canvas id="chartS2"></canvas>
+                        </div>
+                        <div id="chartContainerS3">
+                            <canvas id="chartS3"></canvas>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="tableContainer" class="card">
+                    <h3>🔢 Driver Data Table</h3>
+                    <p>This table shows the raw average sector times and pit stop data based on the filters selected above (e.g., green-flag, non-pit laps).</p>
+                    <div id="tableDiv" class="table-wrapper"></div>
+                </div>
+            </div>
+
+            <div id="view-simulator" class="hidden">
+                 <div id="simulatorSection" class="card">
+                    <h2>🏎️ Track Lap Simulator</h2>
+                    <div class="simulator-grid">
+                        
+                        <div class="simulator-controls">
+                            <h3>1. Track Setup (Meters)</h3>
+                            <div>
+                                <label for="trackPresetSelect">Track Preset</label>
+                                <select id="trackPresetSelect">
+                                    <option value="vir">Virginia International Raceway</option>
+                                    <option value="sonoma">Sonoma Raceway</option>
+                                    <option value="sebring">Sebring International Raceway</option>
+                                    <option value="road_america">Road America</option>
+                                    <option value="ims">Indianapolis Motor Speedway</option>
+                                    <option value="cota">Circuit of the Americas</option>
+                                    <option value="barber">Barber Motorsports Park</option>
+                                    <option value="custom">-- Custom --</option>
+                                </select>
+                            </div>
+                                
+                            <div id="customTrackInputs" class="hidden">
+                                <div>
+                                    <label for="s1Length">Sector 1 Length (m)</label>
+                                    <input type="number" id="s1Length" value="2000">
+                                </div>
+                                <div>
+                                    <label for="s2Length">Sector 2 Length (m)</label>
+                                    <input type="number" id="s2Length" value="1500">
+                                </div>
+                                <div>
+                                    <label for="s3Length">Sector 3 Length (m)</label>
+                                    <input type="number" id="s3Length" value="1800">
+                                </div>
+                            </div>
+
+                            <h3>2. Select Driver</h3>
+                            
+                            <div id="simulator-raceday-select-container" class="form-field hidden">
+                                <label for="simulatorRacedaySelect">Select Raceday</label>
+                                <select id="simulatorRacedaySelect">
+                                    </select>
+                            </div>
+
+                            <p class="help-text">
+                                Uses all valid laps (sector or total) for the selected driver, ignoring flags.
+                            </p>
+                            <div>
+                                <label for="simulatorCarSelect" class="sr-only">Select Driver</label>
+                                <select id="simulatorCarSelect">
+                                </select>
+                            </div>
+                            <div id="simulatorErrorMessage" class="hidden"></div>
+
+                            <h3>3. Controls</h3>
+                            <div>
+                                <div class="button-group">
+                                    <button id="simControlButton">
+                                        Start
+                                    </button>
+                                    <button id="simResetButton">
+                                        Reset
+                                    </button>
+                                </div>
+                                <div>
+                                    <label for="simSpeedSlider">
+                                        Simulation Speed: <span id="simSpeedLabel">1.0x</span>
+                                    </label>
+                                    <input type="range" id="simSpeedSlider" min="0.1" max="100" value="1" step="0.1">
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="simulator-canvas-container">
+                            <div class="canvas-wrapper">
+                                <canvas id="trackSimulatorCanvas" width="500" height="500"></canvas>
+                                <div id="simTimerDisplay">
+                                    <div class="timer-text">00:00.0</div>
+                                    <div class="timer-label">ELAPSED TIME</div>
+                                </div>
+                            </div>
+                            
+                            <div class="legend">
+                                <div>
+                                    <span class="legend-color-box s1"></span>
+                                    <span>Sector 1</span>
+                                </div>
+                                <div>
+                                    <span class="legend-color-box s2"></span>
+                                    <span>Sector 2</span>
+                                </div>
+                                <div>
+                                    <span class="legend-color-box s3"></span>
+                                    <span>Sector 3</span>
+                                </div>
+                            </div>
+                        </div>
+
+                    </div>
+                 </div>
+            </div>
+
+            <div id="view-ai" class="hidden">
+                <div id="aiAnalysisContainer" class="card">
+                    <h2>📊 AI-Powered Race Insights</h2>
+                    
+                    <div id="ai-raceday-filter-container" class="hidden">
+                         <label>
+                            Raceday Data Source
+                        </label>
+                        <div id="aiRacedayFilterGroup" class="form-field" style="display: flex; gap: 1rem;">
+                             <div class="radio-group">
+                                <input type="radio" id="ai-rd-filter-rd1" name="raceday-filter-ai" value="rd1" checked>
+                                <label for="ai-rd-filter-rd1">Raceday 1</label>
+                            </div>
+                             <div class="radio-group">
+                                <input type="radio" id="ai-rd-filter-rd2" name="raceday-filter-ai" value="rd2">
+                                <label for="ai-rd-filter-rd2">Raceday 2</label>
+                            </div>
+                             <div class="radio-group">
+                                <input type="radio" id="ai-rd-filter-comp" name="raceday-filter-ai" value="comp">
+                                <label for="ai-rd-filter-comp">Comparative</label>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div id="ai-view-RD1">
+                        <section>
+                            <h3>🏁 Theoretical Race: "Best Lap" Pace (RD1)</h3>
+                            <p>This simulation shows a theoretical race where every driver *consistently* ran their single best lap for the entire race. This reveals the "ultimate potential" pace of each car, ignoring traffic, tire wear, or mistakes.</p>
+                            <div class="ai-grid">
+                                <div id="chartBestLapRaceContainer-RD1">
+                                    <canvas id="chartBestLapRace-RD1"></canvas>
+                                </div>
+                                <div>
+                                    <h4>Theoretical Leaderboard (RD1)</h4>
+                                    <div id="bestLapLeaderboard-RD1" class="table-wrapper ai-table"></div>
+                                </div>
+                            </div>
+                            <div id="aiBestLapText-RD1" class="ai-text-prose"><p>Loading analysis...</p></div>
+                        </section>
+                        <hr>
+                        <section>
+                            <h3>⚡️ Race Position vs. Pace (Over/Underperformers) (RD1)</h3>
+                            <p>This chart compares a driver's final finishing position to their "Theoretical Pace Rank". A positive bar means they overperformed. A negative bar means they underperformed.</p>
+                            <div id="chartPaceVsPosContainer-RD1">
+                                <canvas id="chartPaceVsPos-RD1"></canvas>
+                            </div>
+                            <div id="aiPaceVsPosText-RD1" class="ai-text-prose"><p>Loading analysis...</p></div>
+                        </section>
+                        <hr>
+                        <section>
+                            <h3>🔁 Consistency Analysis (Best vs. Average Pace) (RD1)</h3>
+                            <p>This chart shows the gap between a driver's single "hero" lap and their average race pace (from valid green-flag, non-pit laps). A smaller bar indicates higher consistency.</p>
+                            <div id="chartConsistencyContainer-RD1">
+                                <canvas id="chartConsistency-RD1"></canvas>
+                            </div>
+                            <div id="aiConsistencyText-RD1" class="ai-text-prose"><p>Loading analysis...</p></div>
+                        </section>
+                        <hr>
+                        <section>
+                            <h3>📉 Pace Degradation (Stint Analysis) (RD1)</h3>
+                            <p>This chart shows the average green-flag, non-pit lap time for selected drivers during each quarter of the race. Pit stops are marked with a different point style.</p>
+                            <div id="paceDegradationDriverSelectionControls-RD1" class="paceDegradationDriverSelectionControls">
+                                <button id="toggleSelectAllPaceDrivers-RD1">Select All</button>
+                                <button id="updatePaceDegradationChart-RD1">Update Chart</button>
+                            </div>
+                            <div id="paceDegradationDriverSelection-RD1" class="driver-checkbox-grid"></div>
+                            <div id="chartPaceDegradationContainer-RD1">
+                                <canvas id="chartPaceDegradation-RD1"></canvas>
+                            </div>
+                            <div id="aiPaceDegradationText-RD1" class="ai-text-prose"><p>Loading analysis...</p></div>
+                        </section>
+                        <hr>
+                        <section>
+                            <h3>⚠️ Costly Mistake Analysis (Worst Lap Delta) (RD1)</h3>
+                            <p>This chart shows the time difference between a driver's average lap and their *single worst* green-flag, non-pit lap. A large bar highlights a driver who had at least one major, time-costly error.</p>
+                            <div id="chartCostlyMistakeContainer-RD1">
+                                <canvas id="chartCostlyMistake-RD1"></canvas>
+                            </div>
+                            <div id="aiCostlyMistakeText-RD1" class="ai-text-prose"><p>Loading analysis...</p></div>
+                        </section>
+                        <hr>
+                        <section>
+                            <h3>🛠️ Pit Stop & Strategy Impact (RD1)</h3>
+                            <p>This chart visualizes the total time lost in the pits for each driver. This shows who was most efficient and how strategy differences may have impacted the final results.</p>
+                            <div id="chartPitStopContainer-RD1">
+                                <canvas id="chartPitStop-RD1"></canvas>
+                            </div>
+                            <div id="aiPitStopText-RD1" class="ai-text-prose"><p>Loading analysis...</p></div>
+                        </section>
+                        <hr>
+                        <section>
+                            <h3>💪 Sector "Fingerprint" / Strength Profile (RD1)</h3>
+                            <p>Select a driver to compare their <strong>average</strong> sector times (on green-flag, non-pit laps) to the absolute best time set by *any* driver in that sector. A score of 100% means their *average* matched the *fastest possible* time.</p>
+                            <div class="fingerprint-controls">
+                                <label for="sectorFingerprintDriverSelect-RD1">Select Driver</label>
+                                <select id="sectorFingerprintDriverSelect-RD1"></select>
+                            </div>
+                            <div class="ai-grid">
+                                <div id="chartSectorFingerprintContainer-RD1">
+                                    <canvas id="chartSectorFingerprint-RD1"></canvas>
+                                </div>
+                                <div id="aiSectorFingerprintText-RD1" class="ai-text-prose"><p>Loading analysis...</p></div>
+                            </div>
+                        </section>
+                    </div>
+
+                    <div id="ai-view-RD2" class="hidden">
+                        <section>
+                            <h3>🏁 Theoretical Race: "Best Lap" Pace (RD2)</h3>
+                            <p>This simulation shows a theoretical race where every driver *consistently* ran their single best lap for the entire race. This reveals the "ultimate potential" pace of each car, ignoring traffic, tire wear, or mistakes.</p>
+                            <div class="ai-grid">
+                                <div id="chartBestLapRaceContainer-RD2">
+                                    <canvas id="chartBestLapRace-RD2"></canvas>
+                                </div>
+                                <div>
+                                    <h4>Theoretical Leaderboard (RD2)</h4>
+                                    <div id="bestLapLeaderboard-RD2" class="table-wrapper ai-table"></div>
+                                </div>
+                            </div>
+                            <div id="aiBestLapText-RD2" class="ai-text-prose"><p>Loading analysis...</p></div>
+                        </section>
+                        <hr>
+                        <section>
+                            <h3>⚡️ Race Position vs. Pace (Over/Underperformers) (RD2)</h3>
+                            <p>This chart compares a driver's final finishing position to their "Theoretical Pace Rank". A positive bar means they overperformed. A negative bar means they underperformed.</p>
+                            <div id="chartPaceVsPosContainer-RD2">
+                                <canvas id="chartPaceVsPos-RD2"></canvas>
+                            </div>
+                            <div id="aiPaceVsPosText-RD2" class="ai-text-prose"><p>Loading analysis...</p></div>
+                        </section>
+                        <hr>
+                        <section>
+                            <h3>🔁 Consistency Analysis (Best vs. Average Pace) (RD2)</h3>
+                            <p>This chart shows the gap between a driver's single "hero" lap and their average race pace (from valid green-flag, non-pit laps). A smaller bar indicates higher consistency.</p>
+                            <div id="chartConsistencyContainer-RD2">
+                                <canvas id="chartConsistency-RD2"></canvas>
+                            </div>
+                            <div id="aiConsistencyText-RD2" class="ai-text-prose"><p>Loading analysis...</p></div>
+                        </section>
+                        <hr>
+                        <section>
+                            <h3>📉 Pace Degradation (Stint Analysis) (RD2)</h3>
+                            <p>This chart shows the average green-flag, non-pit lap time for selected drivers during each quarter of the race. Pit stops are marked with a different point style.</p>
+                            <div id="paceDegradationDriverSelectionControls-RD2" class="paceDegradationDriverSelectionControls">
+                                <button id="toggleSelectAllPaceDrivers-RD2">Select All</button>
+                                <button id="updatePaceDegradationChart-RD2">Update Chart</button>
+                            </div>
+                            <div id="paceDegradationDriverSelection-RD2" class="driver-checkbox-grid"></div>
+                            <div id="chartPaceDegradationContainer-RD2">
+                                <canvas id="chartPaceDegradation-RD2"></canvas>
+                            </div>
+                            <div id="aiPaceDegradationText-RD2" class="ai-text-prose"><p>Loading analysis...</p></div>
+                        </section>
+                        <hr>
+                        <section>
+                            <h3>⚠️ Costly Mistake Analysis (Worst Lap Delta) (RD2)</h3>
+                            <p>This chart shows the time difference between a driver's average lap and their *single worst* green-flag, non-pit lap. A large bar highlights a driver who had at least one major, time-costly error.</p>
+                            <div id="chartCostlyMistakeContainer-RD2">
+                                <canvas id="chartCostlyMistake-RD2"></canvas>
+                            </div>
+                            <div id="aiCostlyMistakeText-RD2" class="ai-text-prose"><p>Loading analysis...</p></div>
+                        </section>
+                        <hr>
+                        <section>
+                            <h3>🛠️ Pit Stop & Strategy Impact (RD2)</h3>
+                            <p>This chart visualizes the total time lost in the pits for each driver. This shows who was most efficient and how strategy differences may have impacted the final results.</p>
+                            <div id="chartPitStopContainer-RD2">
+                                <canvas id="chartPitStop-RD2"></canvas>
+                            </div>
+                            <div id="aiPitStopText-RD2" class="ai-text-prose"><p>Loading analysis...</p></div>
+                        </section>
+                        <hr>
+                        <section>
+                            <h3>💪 Sector "Fingerprint" / Strength Profile (RD2)</h3>
+                            <p>Select a driver to compare their <strong>average</strong> sector times (on green-flag, non-pit laps) to the absolute best time set by *any* driver in that sector. A score of 100% means their *average* matched the *fastest possible* time.</p>
+                            <div class="fingerprint-controls">
+                                <label for="sectorFingerprintDriverSelect-RD2">Select Driver</label>
+                                <select id="sectorFingerprintDriverSelect-RD2"></select>
+                            </div>
+                            <div class="ai-grid">
+                                <div id="chartSectorFingerprintContainer-RD2">
+                                    <canvas id="chartSectorFingerprint-RD2"></canvas>
+                                </div>
+                                <div id="aiSectorFingerprintText-RD2" class="ai-text-prose"><p>Loading analysis...</p></div>
+                            </div>
+                        </section>
+                    </div>
+
+                    <div id="ai-view-COMP" class="hidden">
+                        <div style="text-align: center; margin: 2rem 0;">
+                            <h2 style="font-size: 2.25rem; color: var(--color-brand);">📊 Raceday 1 vs. Raceday 2 Comparative Analysis</h2>
+                            <p style="font-size: 1.125rem;">How drivers adapted, improved, or faded overnight.</p>
+                        </div>
+                        <hr>
+                        <section>
+                            <h3>📈 Driver Pace Evolution (RD1 vs. RD2)</h3>
+                            <p>Who got faster or slower overnight? This chart shows the change in each driver's average green-flag, non-pit lap time. A negative bar (green) means they improved.</p>
+                            <div id="compPaceEvolutionContainer">
+                                <canvas id="compPaceEvolutionCanvas"></canvas>
+                            </div>
+                            <div id="compPaceEvolutionText" class="ai-text-prose"><p>Loading analysis...</p></div>
+                        </section>
+                        <hr>
+                        <section>
+                            <h3>🧼 Consistency Delta (Who Cleaned Up Their Act?)</h3>
+                            <p>This chart shows the change in a driver's "Consistency Gap" (Avg Lap vs. Best Lap) between days. A negative bar (blue) means they became *more* consistent.</p>
+                            <div id="compConsistencyDeltaContainer">
+                                <canvas id="compConsistencyDeltaCanvas"></canvas>
+                            </div>
+                            <div id="compConsistencyDeltaText" class="ai-text-prose"><p>Loading analysis...</p></div>
+                        </section>
+                        <hr>
+                        <section>
+                            <h3>🚀 Pace Development Quadrant (Best Lap vs. Avg Lap)</h3>
+                            <p>This scatter plot shows *how* drivers improved. The X-Axis shows change in "Best Lap" (ultimate pace), and the Y-Axis shows change in "Average Lap" (race pace).</p>
+                            <div id="compPaceQuadrantContainer">
+                                <canvas id="compPaceQuadrantCanvas"></canvas>
+                            </div>
+                            <div id="compPaceQuadrantText" class="ai-text-prose"><p>Loading analysis...</p></div>
+                        </section>
+                        <hr>
+                        <section>
+                            <h3>🗺️ Driver Sector Profile Evolution (RD1 vs. RD2)</h3>
+                            <p>Where on the track did a driver improve or fade? Select a driver to see their sector-by-sector "fingerprint" change from Raceday 1 to Raceday 2.</p>
+                            <div class="fingerprint-controls">
+                                <label for="compSectorProfileEvolutionSelect">Select Driver</label>
+                                <select id="compSectorProfileEvolutionSelect"></select>
+                            </div>
+                            <div class="ai-grid">
+                                <div id="compSectorProfileEvolutionContainer">
+                                    <canvas id="compSectorProfileEvolutionCanvas"></canvas>
+                                </div>
+                                <div id="compSectorProfileEvolutionText" class="ai-text-prose"><p>Select a driver to load analysis...</p></div>
+                            </div>
+                        </section>
+                        <hr>
+                        <section>
+                            <h3>🧠 Racecraft Delta (Over/Underperformance Shift)</h3>
+                            <p>Did the driver get "racier"? This compares their (Theoretical Rank - Actual Position) score from RD1 to RD2. A positive bar means they got better at out-performing their car's raw pace.</p>
+                            <div id="compRacecraftDeltaContainer">
+                                <canvas id="compRacecraftDeltaCanvas"></canvas>
+                            </div>
+                            <div id="compRacecraftDeltaText" class="ai-text-prose"><p>Loading analysis...</p></div>
+                        </section>
+                    </div>
+                    
+                </div>
+            </div>
+            <div id="view-chat" class="hidden">
+                <div id="chatSection" class="card">
+                    <h2>💬 Chat with Race Analyst AI</h2>
+                    
+                    <div id="apiKeySection">
+                        <p>🔑 Please enter your Gemini API key. Your key is used only in your browser and not stored. <a href="https://aistudio.google.com/api-keys"> Get an API key.</a></p>
+                        <div class="api-key-form">
+                            <label for="geminiApiKey" class="sr-only">Gemini API Key</label>
+                            <input type="password" id="geminiApiKey" placeholder="Enter your API key...">
+                            <button id="startChatButton">Start Chat</button>
+                        </div>
+                        <p id="apiKeyError" class="hidden"></p>
+                    </div>
+
+                    <div id="chatInterface" class="hidden">
+                        <div id="chatHistory" class="chat-history-box">
+                            <div class="message ai">
+                                <p>Hello! I have analyzed the race data. Ask me anything about driver performance, consistency, pit stops, or theoretical outcomes.</p>
+                            </div>
+                        </div>
+                        <div id="chatInputArea" class="chat-input-area">
+                            <textarea id="chatInput" placeholder="Ask about the race data... e.g., 'Who was the most consistent driver in the top 5?'"></textarea>
+                            <button id="sendChatButton" aria-label="Send message">
+                                ➤
+                            </button>
+                        </div>
+                        <div id="chatLoading" class="hidden">
+                            <p>AI is thinking...</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        </main>
+    </div>
+
+<script>
+    if ('WebSocket' in window) {
+        (function () {
+            function refreshCSS() {
+                var sheets = [].slice.call(document.getElementsByTagName("link"));
+                var head = document.getElementsByTagName("head")[0];
+                for (var i = 0; i < sheets.length; ++i) {
+                    var elem = sheets[i];
+                    var parent = elem.parentElement || head;
+                    parent.removeChild(elem);
+                    var rel = elem.rel;
+                    if (elem.href && typeof rel != "string" || rel.length == 0 || rel.toLowerCase() == "stylesheet") {
+                        var url = elem.href.replace(/(&|\?)_cacheOverride=\d+/, '');
+                        elem.href = url + (url.indexOf('?') >= 0 ? '&' : '?') + '_cacheOverride=' + (new Date().valueOf());
+                    }
+                    parent.appendChild(elem);
+                }
+            }
+            var protocol = window.location.protocol === 'http:' ? 'ws://' : 'wss://';
+            var address = protocol + window.location.host + window.location.pathname + '/ws';
+            var socket = new WebSocket(address);
+            socket.onmessage = function (msg) {
+                if (msg.data == 'reload') window.location.reload();
+                else if (msg.data == 'refreshcss') refreshCSS();
+            };
+            if (sessionStorage && !sessionStorage.getItem('IsThisFirstTime_Log_From_LiveServer')) {
+                console.log('Live reload enabled.');
+                sessionStorage.setItem('IsThisFirstTime_Log_From_LiveServer', true);
+            }
+        })();
+    }
+    else {
+        console.error('Upgrade your browser. This Browser is NOT supported WebSocket for Live-Reloading.');
+    }
+</script>
+</body>
+</html>
