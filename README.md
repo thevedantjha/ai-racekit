@@ -17,7 +17,7 @@ Upload the data for one race day OR for two different race days.
     - **⚠️ Costly Mistake Analysis (Worst Lap Delta):** A chart and insights that shows the time difference between a driver's average lap and their *single worst* green-flag, non-pit lap.
     - **🛠️ Pit Stop & Strategy Impact:** A chart that visualizes the total time lost in the pits for each driver, along with analysis.
     - **💪 Sector "Fingerprint" / Strength Profile:** A chart that compares their average sector times (on green-flag, non-pit laps) to the absolute best time set by *any* driver in that sector, along with analysis.
->
+
     - **☀️ IF MULTIPLE RACE DAY DATA ARE UPLOADED ☀️:**
         - **📈 Driver Pace Evolution:** A chart along with insights that shows the change in each driver's average green-flag, non-pit lap time.
         - **🧼 Consistency Delta:** A chart and analysis that shows the change in a driver's "Consistency Gap" (Avg Lap vs. Best Lap) between days.
