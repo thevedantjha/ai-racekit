@@ -14,7 +14,7 @@ import {
 import {
     handleTrackPresetChange, populateSimulatorCarDropdown,
     controlSimulation, resetSimulation, drawSimulator,
-    populateSimulatorRacedaySelect
+    populateSimulatorRacedaySelect, initSimulatorControls
 } from './simulator.js';
 import {
     createAiAnalysesRd1, createAiAnalysesRd2, createComparativeAnalyses,
@@ -455,6 +455,7 @@ function uiResetAnalysis() {
 
 function initializeApp() {
     initDom();
+    initSimulatorControls();
 
     dom.analyzeButtonHome.addEventListener('click', () => {
         uiClearFileUploadError();

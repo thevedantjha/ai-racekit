@@ -73,4 +73,4 @@ MIT License
 - [Papa Parse](https://www.papaparse.com) for CSV parsing
 - [Chart.js](https://www.chartjs.org) for charts
 - [Gemini 2.5 Flash Image (Nano Banana)](https://aistudio.google.com/models/gemini-2-5-flash-image) for `background.png`
-- [Gemini 2.5 Flash](https://deepmind.google/models/gemini/flash/) model
+- [Gemini 2.5 Flash](https://deepmind.google/models/gemini/flash/) model for AI chat feature
